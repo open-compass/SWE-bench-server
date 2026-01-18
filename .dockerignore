@@ -1,0 +1,99 @@
+# --- Version control ---
+.git
+.gitignore
+.gitattributes
+
+# --- Editor/OS files ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Python caches & environments ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+ENV/
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+pip-wheel-metadata/
+*.egg
+*.egg-info/
+.eggs/
+coverage.xml
+.coverage
+.coverage.*
+htmlcov/
+
+# --- Jupyter ---
+*.ipynb
+.ipynb_checkpoints/
+
+# --- Build artifacts ---
+build/
+dist/
+
+# --- Project-specific large/irrelevant content ---
+logs/
+outputs/
+docs/
+tests/
+swebench.egg-info/
+
+# --- CI/Docs config not required at runtime ---
+.github/
+codecov.yml
+mkdocs.yml
+
+# --- Local scripts not needed in container image ---
+extract_docker_images.py
+load_images.sh
+pull_images.sh
+pull_images_sh.sh
+pull_images_save.sh
+
+all_images_all.txt
+all_images_oracle.txt
+all_images_verified_test.txt
+all_images_verified.txt
+
+# --- Archives & dumps ---
+*.log
+*.tar
+*.tar.gz
+*.zip
+
+# --- Secrets & sensitive files ---
+.env
+.env.*
+.api_key
+.keys
+*.pem
+*.key
+
+# --- Data files not needed at runtime ---
+*.jsonl
+*.jsonl.*
+*.patch
+data/
+notebooks/
+*logs/
+
+# --- Documentation ---
+README.md
+LICENSE
+CHANGELOG.md
+
+# --- Docker-related ---
+Dockerfile*
+docker-compose*.yml
+!Dockerfile
