@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import copy
 import logging
 import os
 import uuid
@@ -100,13 +101,14 @@ def _run_mini_swe_agent(
         # Ensure the image is loaded
         with get_docker_client() as client:
             ensure_image_loaded(client, image_key)
+
         # Extract model configuration
         model_name = llm_config.get("model_name") or os.getenv("OPENAI_MODEL")
         api_key = llm_config.get("api_key") or os.getenv("OPENAI_API_KEY")
         api_base = llm_config.get("url") or os.getenv("OPENAI_BASE_URL")
         model_config = llm_config.get("model_infer_params") or {}
         temperature = model_config.get("temperature", 0.0)
-        top_p = model_config.get("top_p", 0.0)
+        top_p = model_config.get("top_p", 1.0)
 
         # Build model_kwargs for litellm
         model_kwargs = {
@@ -115,7 +117,9 @@ def _run_mini_swe_agent(
             "top_p": top_p,
         }
 
-        model_kwargs.update(model_config)
+        model_kwargs["extra_body"] = {
+            "model_infer_params": copy.deepcopy(model_config),
+        }
 
         if api_key:
             model_kwargs["api_key"] = api_key
