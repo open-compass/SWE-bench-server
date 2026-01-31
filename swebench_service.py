@@ -383,8 +383,7 @@ if __name__ == "__main__":
     if swe_bench_images_path:
         logger.info(f"SWE_BENCH_IMAGES_PATH is set to: {swe_bench_images_path}")
     else:
-        logger.error("Environment variable SWE_BENCH_IMAGES_PATH is not set.")
-        raise EnvironmentError("Environment variable SWE_BENCH_IMAGES_PATH is not set.")
+        logger.info("SWE_BENCH_IMAGES_PATH is not set, images will be pulled from Docker Hub")
 
     logger.info(f"Starting server with {args.workers} uvicorn worker(s)")
     uvicorn.run(app_target, host=args.host, port=args.port, workers=args.workers)

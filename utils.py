@@ -179,19 +179,45 @@ def ensure_image_loaded(client: docker.DockerClient, image_key: str) -> None:
     except docker.errors.ImageNotFound:
         pass  # Image doesn't exist, need to load
 
-    # Load image from the tar file
+    # Load image from the tar file or pull from Docker Hub
     images_path_str = os.getenv("SWE_BENCH_IMAGES_PATH")
-    if not images_path_str:
-        raise Exception("Environment variable SWE_BENCH_IMAGES_PATH is not set")
 
-    images_path = Path(images_path_str)
-    tar_filename = f"{image_key.replace('/', '_').replace(':', '_')}.tar"
-    tar_path = images_path / tar_filename
+    if images_path_str:
+        # Load from local tar file
+        images_path = Path(images_path_str)
+        tar_filename = f"{image_key.replace('/', '_').replace(':', '_')}.tar"
+        tar_path = images_path / tar_filename
 
-    if not tar_path.exists():
-        raise Exception(
-            f"Image tar file not found: {tar_path} for remote image {image_key}"
-        )
+        if not tar_path.exists():
+            raise Exception(
+                f"Image tar file not found: {tar_path} for remote image {image_key}"
+            )
+    else:
+        # Pull from Docker Hub with retry
+        max_retries = 3
+        retry_delay = 1  # seconds
+
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Pulling image from Docker Hub: {image_key} (attempt {attempt + 1}/{max_retries})")
+                client.images.pull(image_key)
+                logger.info(f"Successfully pulled image {image_key} from Docker Hub")
+                return
+            except Exception as e:
+                # Check if the image now exists (another process might have pulled it)
+                try:
+                    client.images.get(image_key)
+                    logger.info(f"Image {image_key} was pulled by another process")
+                    return
+                except docker.errors.ImageNotFound:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Failed to pull image (attempt {attempt + 1}/{max_retries}): {e}")
+                        logger.info(f"Retrying in {retry_delay} seconds...")
+                        time.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
+                    else:
+                        logger.error(f"Failed to pull image after {max_retries} attempts: {e}")
+                        raise
 
     max_retries = 3
     retry_delay = 1  # seconds
