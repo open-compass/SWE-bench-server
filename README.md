@@ -27,16 +27,22 @@ pip install -r requirements.txt
 
 ### 2. Configuration
 
-Set required environment variables (see `.env` or your deployment system):
+Set environment variables (see `.env` or your deployment system):
 
-- `SWE_BENCH_IMAGES_PATH`: Path to store/load SWE-bench Docker images (**required**)
+- `SWE_BENCH_IMAGES_PATH`: Path containing pre-downloaded SWE-bench Docker images (**optional**)
 - `IMAGE_CACHE_MAX_SIZE`: Max number of cached Docker images (default: 20)
 - `THREAD_POOL_MAX_WORKERS`: Number of thread pool workers (default: 1)
 
-**Important:** SWE-bench evaluation images need to be pre-downloaded and placed in the directory specified by `SWE_BENCH_IMAGES_PATH`. The service will only read images from this path and will not pull or build them automatically.
+#### Image Loading Modes
+
+The service supports two modes for loading SWE-bench evaluation images:
+
+**Mode 1: Local Tar Files**
+
+If `SWE_BENCH_IMAGES_PATH` is set, the service will load pre-downloaded images from local `.tar` files.
 
 **Image Format:**
-The required images are `.tar` files exported from Docker (e.g., using `docker save`). Each file should be named according to the SWE-bench naming convention, where all / and : characters in the image name are replaced with underscores (_).
+The required images are `.tar` files exported from Docker (e.g., using `docker save`). Each file should be named according to the SWE-bench naming convention, where all `/` and `:` characters in the image name are replaced with underscores (`_`).
 
 For example, the Docker image:
 
@@ -49,6 +55,10 @@ swebench_sweb.eval.x86_64.astropy_1776_astropy-12907_latest.tar
 ```
 
 These should match the expected image keys for the corresponding SWE-bench tasks and be placed in the `SWE_BENCH_IMAGES_PATH` directory before starting the service.
+
+**Mode 2: Docker Hub**
+
+If `SWE_BENCH_IMAGES_PATH` is not set, the service will automatically pull images from Docker Hub when needed.
 
 
 ### 3. Start the Service
