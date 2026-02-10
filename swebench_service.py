@@ -77,6 +77,7 @@ def _run_mini_swe_agent(
     llm_config: dict[str, Any],
     step_limit: int = 250,
     cost_limit: float = 3.0,
+    request_timeout: float | None = None,
 ) -> dict[str, Any]:
     """
     Run mini-swe-agent on a SWE-bench instance.
@@ -86,6 +87,7 @@ def _run_mini_swe_agent(
         llm_config: LLM configuration dictionary with model_name, api_key, url, etc.
         step_limit: Maximum number of agent steps (default: 250)
         cost_limit: Maximum cost limit in dollars (default: 3.0)
+        request_timeout: Timeout in seconds for each LLM API request (default: None, no timeout)
 
     Returns:
         Dictionary with content (git diff), model_name, call_stat, messages, exit_status
@@ -116,6 +118,10 @@ def _run_mini_swe_agent(
             "temperature": temperature,
             "top_p": top_p,
         }
+
+        # Add request timeout if specified
+        if request_timeout is not None:
+            model_kwargs["timeout"] = request_timeout
 
         model_kwargs["extra_body"] = {
             "model_infer_params": copy.deepcopy(model_config),
@@ -265,9 +271,10 @@ async def run_swebench_task(request: TaskRequest):
         # Get LLM configuration
         llm_config = payload.get("llm_config", {})
 
-        # Get optional step_limit and cost_limit from params
-        step_limit = params.get("step_limit", SWEBENCH_AGENT_CONFIG["step_limit"])
+        # Get optional step_limit, cost_limit, and request_timeout from params
+        step_limit = params.get("max_steps", SWEBENCH_AGENT_CONFIG["step_limit"])
         cost_limit = params.get("cost_limit", SWEBENCH_AGENT_CONFIG["cost_limit"])
+        request_timeout = params.get("request_timeout")
 
         # Validate task input: prefer problem_statement, fallback to question
         task = instance.get("problem_statement") or params.get("question")
@@ -281,7 +288,13 @@ async def run_swebench_task(request: TaskRequest):
 
         # Run mini-swe-agent
         result = await asyncio.get_running_loop().run_in_executor(
-            task_executor, _run_mini_swe_agent, instance, llm_config, step_limit, cost_limit
+            task_executor,
+            _run_mini_swe_agent,
+            instance,
+            llm_config,
+            step_limit,
+            cost_limit,
+            request_timeout,
         )
 
         # Extract patch from the agent result (git diff)
