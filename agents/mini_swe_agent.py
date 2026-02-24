@@ -8,21 +8,59 @@ to generate patches for SWE-bench instances.
 import copy
 import logging
 import os
+from pathlib import Path
 from typing import Any
 
+import minisweagent
+import yaml
 from minisweagent.agents.default import DefaultAgent
 from minisweagent.environments.docker import DockerEnvironment
 from minisweagent.models.litellm_model import LitellmModel
 from swebench.harness.test_spec.test_spec import make_test_spec
 
 from agents.base import BaseAgentRunner
-from swebench_agent_config import SWEBENCH_AGENT_CONFIG
 from swebench_pro_utils import get_swebench_pro_image_uri
 from utils import (
     ImageLRUCache,
     ensure_image_loaded,
     get_docker_client,
 )
+
+# ---------------------------------------------------------------------------
+# SWE-bench agent configuration (previously in swebench_agent_config.py)
+# ---------------------------------------------------------------------------
+
+_MINISWEAGENT_DIR = Path(minisweagent.__file__).parent
+_SWEBENCH_YAML_PATH = _MINISWEAGENT_DIR / "config" / "extra" / "swebench.yaml"
+
+
+def _load_swebench_config() -> dict:
+    """Load the SWE-bench agent configuration from the official YAML file."""
+    if not _SWEBENCH_YAML_PATH.exists():
+        raise FileNotFoundError(
+            f"Could not find swebench.yaml at {_SWEBENCH_YAML_PATH}. "
+            "Make sure mini-swe-agent is installed in the expected location."
+        )
+
+    with open(_SWEBENCH_YAML_PATH, "r") as f:
+        config = yaml.safe_load(f)
+
+    agent_config = config.get("agent", {})
+    env_config = config.get("environment", {})
+    env_config.pop("environment_class", None)
+
+    return {
+        "system_template": agent_config.get("system_template", ""),
+        "instance_template": agent_config.get("instance_template", ""),
+        "action_observation_template": agent_config.get("action_observation_template", ""),
+        "format_error_template": agent_config.get("format_error_template", ""),
+        "step_limit": int(agent_config.get("step_limit", 250)),
+        "cost_limit": float(agent_config.get("cost_limit", 3.0)),
+        "environment": env_config,
+    }
+
+
+SWEBENCH_AGENT_CONFIG = _load_swebench_config()
 
 logger = logging.getLogger(__name__)
 

@@ -15,8 +15,11 @@ from pydantic import BaseModel
 
 from agents.base import create_agent_runner
 from evaluators.base import create_evaluator
-from swebench_agent_config import SWEBENCH_AGENT_CONFIG
 from utils import ImageLRUCache
+
+# Default agent limits
+DEFAULT_STEP_LIMIT = 250
+DEFAULT_COST_LIMIT = 3.0
 
 logger = logging.getLogger(__name__)
 
@@ -104,8 +107,8 @@ async def run_swebench_task(request: TaskRequest):
 
     # Extract optional parameters with defaults
     llm_config = payload.get("llm_config", {})
-    step_limit = payload.get("max_steps", SWEBENCH_AGENT_CONFIG["step_limit"])
-    cost_limit = params.get("cost_limit", SWEBENCH_AGENT_CONFIG["cost_limit"])
+    step_limit = payload.get("max_steps", DEFAULT_STEP_LIMIT)
+    cost_limit = params.get("cost_limit", DEFAULT_COST_LIMIT)
     request_timeout = params.get("request_timeout")
 
     try:

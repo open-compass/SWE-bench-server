@@ -9,15 +9,16 @@ import copy
 import logging
 import os
 import tempfile
+import warnings
 from pathlib import Path
 from typing import Any
 
+import yaml
 from pydantic import SecretStr
 from swebench.harness.test_spec.test_spec import make_test_spec
 from swerex.deployment.config import DockerDeploymentConfig
 
 from agents.base import BaseAgentRunner
-from swe_agent_config import SWE_AGENT_DEFAULT_CONFIG
 from swebench_pro_utils import get_swebench_pro_image_uri
 from utils import (
     ImageLRUCache,
@@ -31,6 +32,66 @@ from sweagent.agent.models import GenericAPIModelConfig
 from sweagent.agent.problem_statement import TextProblemStatement
 from sweagent.environment.repo import PreExistingRepoConfig
 from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
+
+# ---------------------------------------------------------------------------
+# SWE-agent configuration loading (previously in swe_agent_config.py)
+# ---------------------------------------------------------------------------
+
+_CONFIG_DIR_ENV = os.getenv("SWE_AGENT_CONFIG_DIR")
+_TOOLS_DIR_ENV = os.getenv("SWE_AGENT_TOOLS_DIR")
+_CONFIG_ROOT_ENV = os.getenv("SWE_AGENT_CONFIG_ROOT")
+
+_COMMON_SWE_AGENT_DIRS = [
+    Path.home() / "SWE-agent",
+    Path.cwd() / "SWE-agent",
+]
+
+_swe_agent_root = None
+for _p in _COMMON_SWE_AGENT_DIRS:
+    if (_p / "config").is_dir() and (_p / "tools").is_dir():
+        _swe_agent_root = _p
+        break
+
+if _swe_agent_root:
+    if not _CONFIG_ROOT_ENV:
+        os.environ["SWE_AGENT_CONFIG_ROOT"] = str(_swe_agent_root)
+    if not _CONFIG_DIR_ENV:
+        os.environ["SWE_AGENT_CONFIG_DIR"] = str(_swe_agent_root / "config")
+    if not _TOOLS_DIR_ENV:
+        os.environ["SWE_AGENT_TOOLS_DIR"] = str(_swe_agent_root / "tools")
+    if not os.getenv("SWE_AGENT_TRAJECTORY_DIR"):
+        os.environ["SWE_AGENT_TRAJECTORY_DIR"] = str(_swe_agent_root / "trajectories")
+
+try:
+    import sweagent
+    _SWE_AGENT_CONFIG_DIR = sweagent.CONFIG_DIR
+except (ImportError, AssertionError) as e:
+    _SWE_AGENT_CONFIG_DIR = None
+    warnings.warn(
+        f"Could not import sweagent: {e}. "
+        "Make sure to set SWE_AGENT_CONFIG_DIR, SWE_AGENT_TOOLS_DIR, and "
+        "SWE_AGENT_TRAJECTORY_DIR environment variables pointing to a cloned SWE-agent repository."
+    )
+
+
+def _load_default_sweagent_config() -> dict:
+    """Load the default SWE-agent configuration (default.yaml)."""
+    if _SWE_AGENT_CONFIG_DIR is None:
+        raise RuntimeError(
+            "sweagent is not available. Please set SWE_AGENT_CONFIG_DIR, "
+            "SWE_AGENT_TOOLS_DIR, and SWE_AGENT_TRAJECTORY_DIR environment variables."
+        )
+    config_path = _SWE_AGENT_CONFIG_DIR / "default.yaml"
+    if not config_path.exists():
+        raise FileNotFoundError(f"Could not find default.yaml at {config_path}.")
+    with open(config_path, "r") as f:
+        return yaml.safe_load(f)
+
+
+try:
+    SWE_AGENT_DEFAULT_CONFIG = _load_default_sweagent_config()
+except (FileNotFoundError, RuntimeError):
+    SWE_AGENT_DEFAULT_CONFIG = {}
 
 logger = logging.getLogger(__name__)
 
