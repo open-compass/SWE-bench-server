@@ -16,6 +16,13 @@ from typing import Any
 import yaml
 from pydantic import SecretStr
 from swebench.harness.test_spec.test_spec import make_test_spec
+import swebench.harness.test_spec.python as _ts_python
+
+# Patch out network calls in test_spec
+if hasattr(_ts_python, "get_environment_yml"):
+    _ts_python.get_environment_yml = lambda *_: ""
+if hasattr(_ts_python, "get_requirements"):
+    _ts_python.get_requirements = lambda *_: ""
 from swerex.deployment.config import DockerDeploymentConfig
 
 from agents.base import BaseAgentRunner
@@ -26,15 +33,8 @@ from utils import (
     get_docker_client,
 )
 
-# Import SWE-agent components
-from sweagent.agent.agents import DefaultAgentConfig, get_agent_from_config
-from sweagent.agent.models import GenericAPIModelConfig
-from sweagent.agent.problem_statement import TextProblemStatement
-from sweagent.environment.repo import PreExistingRepoConfig
-from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
-
 # ---------------------------------------------------------------------------
-# SWE-agent configuration loading (previously in swe_agent_config.py)
+# SWE-agent configuration loading
 # ---------------------------------------------------------------------------
 
 _CONFIG_DIR_ENV = os.getenv("SWE_AGENT_CONFIG_DIR")
@@ -42,6 +42,7 @@ _TOOLS_DIR_ENV = os.getenv("SWE_AGENT_TOOLS_DIR")
 _CONFIG_ROOT_ENV = os.getenv("SWE_AGENT_CONFIG_ROOT")
 
 _COMMON_SWE_AGENT_DIRS = [
+    Path("/mnt/shared-storage-user/liqingqiu/github/SWE-agent"),
     Path.home() / "SWE-agent",
     Path.cwd() / "SWE-agent",
 ]
@@ -92,6 +93,14 @@ try:
     SWE_AGENT_DEFAULT_CONFIG = _load_default_sweagent_config()
 except (FileNotFoundError, RuntimeError):
     SWE_AGENT_DEFAULT_CONFIG = {}
+
+# Import SWE-agent components
+from sweagent.agent.agents import DefaultAgentConfig, get_agent_from_config
+from sweagent.agent.models import GenericAPIModelConfig
+from sweagent.agent.problem_statement import TextProblemStatement
+from sweagent.environment.repo import PreExistingRepoConfig
+from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
+
 
 logger = logging.getLogger(__name__)
 

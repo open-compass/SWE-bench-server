@@ -16,7 +16,15 @@ import yaml
 from minisweagent.agents.default import DefaultAgent
 from minisweagent.environments.docker import DockerEnvironment
 from minisweagent.models.litellm_model import LitellmModel
+import swebench.harness.test_spec.python as _ts_python
 from swebench.harness.test_spec.test_spec import make_test_spec
+
+# Patch out network calls in test_spec
+if hasattr(_ts_python, "get_environment_yml"):
+    _ts_python.get_environment_yml = lambda *_: ""
+if hasattr(_ts_python, "get_requirements"):
+    _ts_python.get_requirements = lambda *_: ""
+
 
 from agents.base import BaseAgentRunner
 from swebench_pro_utils import get_swebench_pro_image_uri
@@ -98,7 +106,6 @@ class MiniSweAgentRunner(BaseAgentRunner):
             repo = instance.get("repo", "")
             return get_swebench_pro_image_uri(instance_id, repo)
         else:
-            # Standard SWE-bench: use make_test_spec
             test_spec = make_test_spec(
                 instance, namespace="swebench", instance_image_tag="latest"
             )

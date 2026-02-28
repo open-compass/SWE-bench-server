@@ -14,8 +14,15 @@ from swebench.harness.constants import (
     KEY_MODEL,
     KEY_PREDICTION,
 )
+import swebench.harness.test_spec.python as _ts_python
 from swebench.harness.run_evaluation import run_instance
 from swebench.harness.test_spec.test_spec import make_test_spec
+
+# Patch out network calls in test_spec
+if hasattr(_ts_python, "get_environment_yml"):
+    _ts_python.get_environment_yml = lambda *_: ""
+if hasattr(_ts_python, "get_requirements"):
+    _ts_python.get_requirements = lambda *_: ""
 
 from evaluators.base import BaseEvaluator
 from utils import ImageLRUCache, cleanup_logs
