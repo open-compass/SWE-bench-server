@@ -23,9 +23,15 @@ class ImageLRUCache:
         Args:
             max_size: Maximum number of images to retain.
         """
-        self.max_size = max_size if max_size is not None else int(os.getenv("IMAGE_CACHE_MAX_SIZE", "20"))
+        self.max_size = (
+            max_size
+            if max_size is not None
+            else int(os.getenv("IMAGE_CACHE_MAX_SIZE", "20"))
+        )
         self.cache = OrderedDict()  # {image_key: timestamp}
-        self.usage_count = defaultdict(int)  # {image_key: int} - reference count for images in use
+        self.usage_count = defaultdict(
+            int
+        )  # {image_key: int} - reference count for images in use
         self.deleting = set()  # {image_key} - images currently being deleted
         self.lock = threading.Lock()
         self.condition = threading.Condition(self.lock)
@@ -86,7 +92,11 @@ class ImageLRUCache:
             with self.lock:
                 self.deleting.remove(candidate_key)
                 self.condition.notify_all()
-                if removed and candidate_key in self.cache and self.usage_count[candidate_key] == 0:
+                if (
+                    removed
+                    and candidate_key in self.cache
+                    and self.usage_count[candidate_key] == 0
+                ):
                     del self.cache[candidate_key]
                     attempts = 0  # Successfully removed, reset counter
                 else:
@@ -199,7 +209,9 @@ def ensure_image_loaded(client: docker.DockerClient, image_key: str) -> None:
 
         for attempt in range(max_retries):
             try:
-                logger.info(f"Pulling image from Docker Hub: {image_key} (attempt {attempt + 1}/{max_retries})")
+                logger.info(
+                    f"Pulling image from Docker Hub: {image_key} (attempt {attempt + 1}/{max_retries})"
+                )
                 client.images.pull(image_key)
                 logger.info(f"Successfully pulled image {image_key} from Docker Hub")
                 return
@@ -211,12 +223,16 @@ def ensure_image_loaded(client: docker.DockerClient, image_key: str) -> None:
                     return
                 except docker.errors.ImageNotFound:
                     if attempt < max_retries - 1:
-                        logger.warning(f"Failed to pull image (attempt {attempt + 1}/{max_retries}): {e}")
+                        logger.warning(
+                            f"Failed to pull image (attempt {attempt + 1}/{max_retries}): {e}"
+                        )
                         logger.info(f"Retrying in {retry_delay} seconds...")
                         time.sleep(retry_delay)
                         retry_delay *= 2  # Exponential backoff
                     else:
-                        logger.error(f"Failed to pull image after {max_retries} attempts: {e}")
+                        logger.error(
+                            f"Failed to pull image after {max_retries} attempts: {e}"
+                        )
                         raise
 
     max_retries = 3
@@ -224,7 +240,9 @@ def ensure_image_loaded(client: docker.DockerClient, image_key: str) -> None:
 
     for attempt in range(max_retries):
         try:
-            logger.info(f"Loading image from local tar file: {tar_path} (attempt {attempt + 1}/{max_retries})")
+            logger.info(
+                f"Loading image from local tar file: {tar_path} (attempt {attempt + 1}/{max_retries})"
+            )
             with tar_path.open("rb") as f:
                 client.images.load(f)
             logger.info(f"Successfully loaded image {image_key} from {tar_path}")
@@ -238,13 +256,17 @@ def ensure_image_loaded(client: docker.DockerClient, image_key: str) -> None:
             except docker.errors.ImageNotFound:
                 # Image still doesn't exist
                 if attempt < max_retries - 1:
-                    logger.warning(f"Failed to load image (attempt {attempt + 1}/{max_retries}): {e}")
+                    logger.warning(
+                        f"Failed to load image (attempt {attempt + 1}/{max_retries}): {e}"
+                    )
                     logger.info(f"Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
                 else:
                     # The final attempt failed, re-raise the error
-                    logger.error(f"Failed to load image from tar file after {max_retries} attempts: {e}")
+                    logger.error(
+                        f"Failed to load image from tar file after {max_retries} attempts: {e}"
+                    )
                     raise
 
 
@@ -257,7 +279,11 @@ def cleanup_logs(run_id: str) -> None:
     from swebench.harness.constants import RUN_EVALUATION_LOG_DIR
 
     # Check if cleanup is enabled via environment variable
-    cleanup_enabled = os.getenv("SWE_BENCH_CLEANUP_LOGS", "true").lower() in {"true", "1", "yes"}
+    cleanup_enabled = os.getenv("SWE_BENCH_CLEANUP_LOGS", "true").lower() in {
+        "true",
+        "1",
+        "yes",
+    }
 
     if not cleanup_enabled:
         return

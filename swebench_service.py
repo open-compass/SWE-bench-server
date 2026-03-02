@@ -29,7 +29,9 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # Startup: Initialize resources
     logger.info(f"ImageLRUCache initialized: max_size={image_cache.max_size}")
-    logger.info(f"ThreadPoolExecutor initialized with max_workers={thread_pool_max_workers}")
+    logger.info(
+        f"ThreadPoolExecutor initialized with max_workers={thread_pool_max_workers}"
+    )
     yield
     # Shutdown: Clean up resources
     logger.info("Shutting down thread pool...")
@@ -81,19 +83,37 @@ async def run_swebench_task(request: TaskRequest):
 
     # Validate benchmark_type
     benchmark_type = payload.get("benchmark_type")
-    valid_benchmark_types = {"swebench_verified", "swebench", "swebench_lite", "swebench_multilingual", "swebench_pro"}
+    valid_benchmark_types = {
+        "swebench_verified",
+        "swebench",
+        "swebench_lite",
+        "swebench_multilingual",
+        "swebench_pro",
+    }
     if not benchmark_type:
-        raise HTTPException(status_code=400, detail=f"Missing benchmark_type. Must be one of {sorted(valid_benchmark_types)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing benchmark_type. Must be one of {sorted(valid_benchmark_types)}",
+        )
     if benchmark_type not in valid_benchmark_types:
-        raise HTTPException(status_code=400, detail=f"Invalid benchmark_type: {benchmark_type}. Must be one of {sorted(valid_benchmark_types)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid benchmark_type: {benchmark_type}. Must be one of {sorted(valid_benchmark_types)}",
+        )
 
     # Validate agent_type
     agent_type = payload.get("agent_type")
     valid_agent_types = {"mini_swe_agent", "swe_agent"}
     if not agent_type:
-        raise HTTPException(status_code=400, detail=f"Missing agent_type. Must be one of {sorted(valid_agent_types)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing agent_type. Must be one of {sorted(valid_agent_types)}",
+        )
     if agent_type not in valid_agent_types:
-        raise HTTPException(status_code=400, detail=f"Invalid agent_type: {agent_type}. Must be one of {sorted(valid_agent_types)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid agent_type: {agent_type}. Must be one of {sorted(valid_agent_types)}",
+        )
 
     # Validate task input: prefer problem_statement, fallback to question
     task = instance.get("problem_statement") or params.get("question")
@@ -109,7 +129,7 @@ async def run_swebench_task(request: TaskRequest):
     llm_config = payload.get("llm_config", {})
     step_limit = payload.get("max_steps", DEFAULT_STEP_LIMIT)
     cost_limit = params.get("cost_limit", DEFAULT_COST_LIMIT)
-    request_timeout = params.get("request_timeout")
+    request_timeout = llm_config.get("request_timeout")
 
     try:
         # Run agent using the abstracted runner
@@ -176,7 +196,9 @@ async def run_swebench_task(request: TaskRequest):
         logger.info(f"Evaluation result: {evaluation_result}")
 
         # Extract the resolved status and set the correct flag
-        resolved = isinstance(evaluation_result, dict) and evaluation_result.get("resolved", False)
+        resolved = isinstance(evaluation_result, dict) and evaluation_result.get(
+            "resolved", False
+        )
         final_answer = str(resolved)
 
         return TaskResponse(
@@ -228,7 +250,9 @@ if __name__ == "__main__":
     if swe_bench_images_path:
         logger.info(f"SWE_BENCH_IMAGES_PATH is set to: {swe_bench_images_path}")
     else:
-        logger.info("SWE_BENCH_IMAGES_PATH is not set, images will be pulled from Docker Hub")
+        logger.info(
+            "SWE_BENCH_IMAGES_PATH is not set, images will be pulled from Docker Hub"
+        )
 
     logger.info(f"Starting server with {args.workers} uvicorn worker(s)")
     uvicorn.run(app_target, host=args.host, port=args.port, workers=args.workers)
