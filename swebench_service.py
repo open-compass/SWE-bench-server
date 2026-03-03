@@ -244,8 +244,8 @@ def _run_docker_evaluation(
                 )
 
             # Clean up old images if the cache is full
-            # Controlled by IMAGE_CACHE_CLEANUP_ENABLED environment variable (default: true)
-            cleanup_enabled = os.getenv("IMAGE_CACHE_CLEANUP_ENABLED", "true").lower() in {"true", "1", "yes"}
+            # Controlled by IMAGE_CACHE_CLEANUP_ENABLED environment variable (default: false)
+            cleanup_enabled = os.getenv("IMAGE_CACHE_CLEANUP_ENABLED", "false").lower() in {"true", "1", "yes"}
             if cleanup_enabled:
                 image_cache.cleanup_old_images(client)
 
