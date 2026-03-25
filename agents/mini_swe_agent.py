@@ -76,6 +76,7 @@ def _load_swebench_config() -> dict:
         "step_limit": int(agent_config.get("step_limit", 250)),
         "cost_limit": float(agent_config.get("cost_limit", 3.0)),
         "environment": env_config,
+        "model_kwargs": model_config.get("model_kwargs", {}),
     }
 
 
@@ -167,14 +168,12 @@ class MiniSweAgentRunner(BaseAgentRunner):
             temperature = model_config.get("temperature", 0.0)
             top_p = model_config.get("top_p", 1.0)
 
-            # Build model_kwargs for litellm
-            model_kwargs = {
-                "drop_params": True,
+            # Build model_kwargs for litellm: start from official config, then overlay
+            model_kwargs = {**SWEBENCH_AGENT_CONFIG.get("model_kwargs", {})}
+            model_kwargs.update({
                 "temperature": temperature,
                 "top_p": top_p,
-            }
-            if _IS_V2:
-                model_kwargs["parallel_tool_calls"] = True
+            })
 
             # Add request timeout if specified
             if request_timeout is not None:

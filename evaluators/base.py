@@ -98,7 +98,7 @@ class BaseEvaluator(ABC):
 
             # Clean up old images if needed
             cleanup_enabled = os.getenv(
-                "IMAGE_CACHE_CLEANUP_ENABLED", "true"
+                "IMAGE_CACHE_CLEANUP_ENABLED", "false"
             ).lower() in {"true", "1", "yes"}
             if cleanup_enabled:
                 self.image_cache.cleanup_old_images(client)
