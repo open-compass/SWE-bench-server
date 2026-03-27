@@ -126,9 +126,14 @@ async def run_swebench_task(request: TaskRequest):
         instance["problem_statement"] = task
 
     # Extract optional parameters with defaults
-    llm_config = payload.get("llm_config", {})
-    step_limit = payload.get("max_steps", DEFAULT_STEP_LIMIT)
-    cost_limit = params.get("cost_limit", DEFAULT_COST_LIMIT)
+    llm_config = payload.get("llm_config") or {}
+
+    raw_max_steps = payload.get("max_steps")
+    step_limit = DEFAULT_STEP_LIMIT if raw_max_steps is None else raw_max_steps
+
+    raw_cost_limit = params.get("cost_limit")
+    cost_limit = DEFAULT_COST_LIMIT if raw_cost_limit is None else raw_cost_limit
+
     request_timeout = llm_config.get("request_timeout")
 
     try:
