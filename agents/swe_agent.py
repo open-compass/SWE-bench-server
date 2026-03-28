@@ -38,7 +38,6 @@ _TOOLS_DIR_ENV = os.getenv("SWE_AGENT_TOOLS_DIR")
 _CONFIG_ROOT_ENV = os.getenv("SWE_AGENT_CONFIG_ROOT")
 
 _COMMON_SWE_AGENT_DIRS = [
-    Path("/mnt/shared-storage-user/liqingqiu/github/SWE-agent"),
     Path.home() / "SWE-agent",
     Path.cwd() / "SWE-agent",
 ]

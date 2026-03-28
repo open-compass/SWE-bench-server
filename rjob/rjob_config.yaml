@@ -1,0 +1,41 @@
+submit_bin: rjob
+
+resources:
+  gpu: 0
+  cpu: 2
+  memory: 8192
+
+schedule:
+  private_machine: group
+  charged_group: your_group
+  host_network: false
+
+mounts:
+  # - gpfs://gpfs1/your_user:/mnt/your_user
+
+# IMPORTANT: Update these paths for your deployment environment
+jobs_root: /mnt/your_user/jobs_root
+code_root: /mnt/your_user/SWE-bench-server
+python_env: /mnt/your_user/env
+
+# Registry base for SWE-bench instance images
+# Tag format: sweb.eval.x86_64.{instance_id} (with __ replaced by _1776_)
+image_registry: your_registry/swe-bench
+
+poll:
+  interval_sec: 5
+  timeout_sec: 7200
+
+retry:
+  max_retries: 5
+  retry_delay: 10
+
+# Extra environment variables exported in run.sh (optional)
+# Values from API request's llm_config take priority over these
+env_vars:
+  AGENT_COMMAND_TIMEOUT: "60"
+  EVAL_TIMEOUT: "1800"
+  # OPENAI_API_KEY: "..."
+  # OPENAI_BASE_URL: "..."
+  # OPENAI_MODEL: "..."
+  # HTTP_PROXY: "..."

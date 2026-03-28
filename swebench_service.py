@@ -103,7 +103,7 @@ async def run_swebench_task(request: TaskRequest):
 
     # Validate agent_type
     agent_type = payload.get("agent_type")
-    valid_agent_types = {"mini_swe_agent", "swe_agent"}
+    valid_agent_types = {"mini_swe_agent", "swe_agent", "rjob"}
     if not agent_type:
         raise HTTPException(
             status_code=400,
@@ -113,6 +113,11 @@ async def run_swebench_task(request: TaskRequest):
         raise HTTPException(
             status_code=400,
             detail=f"Invalid agent_type: {agent_type}. Must be one of {sorted(valid_agent_types)}",
+        )
+    if agent_type == "rjob" and benchmark_type == "swebench_pro":
+        raise HTTPException(
+            status_code=400,
+            detail="agent_type 'rjob' does not support benchmark_type 'swebench_pro'",
         )
 
     # Validate task input: prefer problem_statement, fallback to question
@@ -126,9 +131,14 @@ async def run_swebench_task(request: TaskRequest):
         instance["problem_statement"] = task
 
     # Extract optional parameters with defaults
-    llm_config = payload.get("llm_config", {})
-    step_limit = payload.get("max_steps", DEFAULT_STEP_LIMIT)
-    cost_limit = params.get("cost_limit", DEFAULT_COST_LIMIT)
+    llm_config = payload.get("llm_config") or {}
+
+    raw_max_steps = payload.get("max_steps")
+    step_limit = DEFAULT_STEP_LIMIT if raw_max_steps is None else raw_max_steps
+
+    raw_cost_limit = params.get("cost_limit")
+    cost_limit = DEFAULT_COST_LIMIT if raw_cost_limit is None else raw_cost_limit
+
     request_timeout = llm_config.get("request_timeout")
 
     try:
@@ -154,7 +164,12 @@ async def run_swebench_task(request: TaskRequest):
         # Run evaluation using the abstracted evaluator
         evaluation_result = {}
         try:
-            evaluator = create_evaluator(benchmark_type, image_cache)
+            if agent_type == "rjob":
+                from evaluators.swebench_rjob import SWEbenchRJobEvaluator
+
+                evaluator = SWEbenchRJobEvaluator(image_cache)
+            else:
+                evaluator = create_evaluator(benchmark_type, image_cache)
             evaluation_result = await loop.run_in_executor(
                 task_executor,
                 lambda: evaluator.evaluate(

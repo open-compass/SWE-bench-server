@@ -100,5 +100,9 @@ def create_agent_runner(agent_type: str, image_cache: ImageLRUCache) -> BaseAgen
         from agents.swe_agent import SweAgentRunner
 
         return SweAgentRunner(image_cache)
+    elif agent_type == "rjob":
+        from agents.mini_swe_agent_rjob import MiniSweAgentRJobRunner
+
+        return MiniSweAgentRJobRunner(image_cache)
     else:
         raise ValueError(f"Unknown agent type: {agent_type}")
