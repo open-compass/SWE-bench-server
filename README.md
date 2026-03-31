@@ -53,7 +53,7 @@ If `SWE_BENCH_IMAGES_PATH` is not set, the service will automatically pull image
 #### Method 1: Run Directly
 
 **Prerequisites:**
-- Python 3.10+
+- Python 3.11+
 - Docker (required for running agent and evaluation). Follow the instructions in the [Docker setup guide](https://docs.docker.com/engine/install/) to install Docker on your machine.
 
 Install Python dependencies:
